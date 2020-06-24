@@ -1,5 +1,5 @@
 <script>
-    import {state} from "./state.js";
+    import {state} from "../../state.js";
 
     export let row, column;
     $: text = $state.game.board[row][column];

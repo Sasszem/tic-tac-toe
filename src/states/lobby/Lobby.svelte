@@ -1,5 +1,5 @@
 <script>
-    import {state} from "./state.js";
+    import {state} from "../../state.js";
     import ServerRow from "./ServerRow.svelte";
     $: games = $state.game.games;
 

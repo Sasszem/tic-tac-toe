@@ -1,6 +1,6 @@
 <script>
     import Cell from "./Cell.svelte";
-    import {state} from "./state.js";
+    import {state} from "../../state.js";
 
     function back() {
         state.backToLobby();

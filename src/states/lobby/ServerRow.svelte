@@ -1,6 +1,6 @@
 <script>
     export let game;
-    import {state} from "./state.js";
+    import {state} from "../../state.js";
 
     function connect() {
         state.connectToGame(game);

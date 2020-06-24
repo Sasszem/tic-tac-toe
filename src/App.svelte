@@ -4,10 +4,10 @@
 
 <script>
 	import {state} from "./state.js";
-	import NameScreen from "./NameScreen.svelte";
-	import Game from "./Game.svelte";
-	import Lobby from "./Lobby.svelte";
-	import WaitingForGame from "./WaitingForGame.svelte";
+	import NameScreen from "./states/NameScreen.svelte";
+	import Game from "./states/game/Game.svelte";
+	import Lobby from "./states/lobby/Lobby.svelte";
+	import WaitingForGame from "./states/WaitingForGame.svelte";
 	$: ST = $state.game.state;
 </script>
 
