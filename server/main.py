@@ -43,7 +43,7 @@ async def hello(ws, path):
         "socket": ws,
         "game": {
             "name": "",
-            "state": "notConnected", #todo
+            "state": "name",
             "board": [
                 ["", "", ""],
                 ["", "", ""],
@@ -63,7 +63,7 @@ async def hello(ws, path):
             game = client["game"]
             state = game["state"]
 
-            if state == "notConnected":
+            if state == "name":
                 assert(msg["type"]=="join")
                 game["name"] = getName(msg["name"])
                 USERS[game["name"]] = client
