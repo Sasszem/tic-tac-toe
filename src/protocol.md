@@ -1,58 +1,49 @@
 # Protocol
 
-Server-client communications works using websockets (dev port: 8765)
+Server-client communications works using websockets (port: 85)
 Each message should be JSON, and should have a type attribute
+Client sends events, server replies with state
+Server can send state even without a preceeding event
 
-## Packet types
+## Event types
 
 ### join
 
-- from client
 - contains `name`
 
-### createGame
-
-- from client
-
-### gameCreated
-
-- from server
-- has ID
+### createNewGame
 
 ### requestGamesList
 
-- from client
-- server should answer with listGames
+- server should send back updated state with list of games
 
-### listGames
+### connect
 
-- from server
-- contains `games`, a list of `{id, opponent}` objects
+- cointains `game` - opponent name
 
-### selectGame
+### click
 
 - from client
-- cointains ID
+- `row`, `column`
 
-### gameStart
+### backToLobby
 
-- from server
-- opponent name
+## State
 
-### clicked
+Game state has the following fields
 
-- from client
-- row, column
+- `name` - player name (string)
+- `state` - current state (string)
+- `board` - 3x3 2D array of strings. Default to `""`
+- `games` - array of strings (opponent names)
+- `opponent` - current opponent
+- `yourTurn` - boolean - if we van make the next move
+- `yourSymbol` - string - `"X"` or `"O"`, defaults to `""`
+- `result` - string - `"won"`, `"lost"`, `"draw"` or `""` (default)
 
-### setCell
+### Valid state strings
 
-- from server
-- row, column, value
-
-### win
-
-- from server
-
-### lose
-
-- from server
+- `"name"` - default. Name input field.
+- `"lobby"` - waiting in lobby
+- `"waitingForGame"` - created ga,e. waiting for other player to join
+- `"game"` - currently in a game
