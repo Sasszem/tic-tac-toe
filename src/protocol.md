@@ -13,10 +13,6 @@ Server can send state even without a preceeding event
 
 ### createNewGame
 
-### requestGamesList
-
-- server should send back updated state with list of games
-
 ### connect
 
 - cointains `game` - opponent name
@@ -38,8 +34,9 @@ Game state has the following fields
 - `games` - array of strings (opponent names)
 - `opponent` - current opponent
 - `yourTurn` - boolean - if we van make the next move
-- `yourSymbol` - string - `"X"` or `"O"`, defaults to `""`
+- `symbol` - string - `"X"` or `"O"`, defaults to `""`
 - `result` - string - `"won"`, `"lost"`, `"draw"` or `""` (default)
+- `cantConnect` - client ONLY, signals error
 
 ### Valid state strings
 
