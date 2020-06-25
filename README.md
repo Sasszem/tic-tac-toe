@@ -30,4 +30,4 @@ To launch server:
 - `cd server`
 - `python3 main.py`
 
-The code works with python3.5, so you can use a rapsberry-like machine to host a server (as I did)
+This code requires `websockets 8` which requires `python 3.7`! It is still possible to run the server on rapsbian, nust you have to build python from source which takes a long time.
