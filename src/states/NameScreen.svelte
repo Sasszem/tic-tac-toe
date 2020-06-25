@@ -1,6 +1,7 @@
 <script>
-    let value;
     import {state} from "../state.js";
+    
+    let value;
 
     function click() {
         state.setName(value);

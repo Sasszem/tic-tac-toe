@@ -12,7 +12,6 @@
         font-family: 'Courier New', Courier, monospace;
     }
 
-
     table {
         display: inline-block;
         border-style: double;
@@ -35,10 +34,10 @@
         Playing againts {$state.game.opponent}
     </h2>
     <h3>
-        Your symbol is <span class={$state.game.yourSymbol=="X" ? "green" : "red"}>{$state.game.yourSymbol}</span>
+        Your symbol is <span class={($state.game.yourSymbol === "X") ? "green" : "red"}>{$state.game.yourSymbol}</span>
     </h3>
     <table>
-        {#each [0,1,2] as i}
+        {#each [0, 1, 2] as i}
             <tr>
                 {#each [0, 1, 2] as j}
                     <td>
@@ -48,18 +47,18 @@
             </tr>
         {/each}
     </table>
-    {#if $state.game.result==""}
+    {#if $state.game.result === ""}
         {#if $state.game.yourTurn}
             <p class="yourTurn">Your turn!</p>
         {:else}
             <p class="enemyTurn">Waiting for your enemy...</p>
         {/if}
     {:else}
-        {#if $state.game.result == "won"}
+        {#if $state.game.result === "won"}
             <p class="green">You won!</p>
-        {:else if $state.game.result=="lost"}
+        {:else if $state.game.result === "lost"}
             <p class="red">You lost!</p>
-        {:else if $state.game.result=="draw"}
+        {:else if $state.game.result === "draw"}
             <p class="yellow">It's a draw</p>
         {/if}
         <button class="endGame" on:click={back}>Back to lobby</button>

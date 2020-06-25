@@ -1,9 +1,9 @@
 <script>
     import {state} from "../../state.js";
     import ServerRow from "./ServerRow.svelte";
-    $: games = $state.game.games;
 
-    $: l = games.length;
+    $: games = $state.game.games;
+    $: noGames = games.length === 0;
 
     function refresh() {
         state.refreshGames();
@@ -68,14 +68,14 @@
         <button class="new button" on:click={create}>Create new</button>
         </div>
     </div>
-    {#if l>0}
+    {#if noGames}
+        <h3>No games alaviable!</h3>
+    {:else}
         <div class="table">
             {#each games as g}
                 <ServerRow game={g}/>
             {/each}
         </div>
-    {:else}
-    <h3>No games alaviable!</h3>
     {/if}
 </div>
 
