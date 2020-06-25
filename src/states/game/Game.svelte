@@ -34,7 +34,7 @@
         Playing againts {$state.game.opponent}
     </h2>
     <h3>
-        Your symbol is <span class={($state.game.yourSymbol === "X") ? "green" : "red"}>{$state.game.yourSymbol}</span>
+        Your symbol is <span class={($state.game.symbol === "X") ? "green" : "red"}>{$state.game.symbol}</span>
     </h3>
     <table>
         {#each [0, 1, 2] as i}
