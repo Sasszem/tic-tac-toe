@@ -1,66 +1,82 @@
 import {writable} from 'svelte/store';
-import { xlink_attr } from 'svelte/internal';
 
-function createState(defVal) {
-    let ws = new WebSocket("ws://46.107.120.54:85");
-    const { subscribe, set, update } = writable({
+// state.js
+// custom svelte store for storing game state
+// and communicating with the server via websockets
+
+
+// store factory function
+function createState(address) {
+    // create and connect websocket
+    let ws = new WebSocket(address);
+
+    const { subscribe, update } = writable({
         ws: ws,
-        connected: false,
         game: {
             state: "name",
             games: [],
-            yourTurn: false,
-            yourSymbol: "O",
+            // other state variables will get populated via server messages
+            // these are just the strictly-needed defaults
         }
     });
 
-    ws.onopen = function() {
-        update(n=>{
-            return {
-                ...n,
-                connected:true
-            };
-        });
+
+    // send packet helper
+    // serializes packet to JSON
+    // enforces type attribute
+    function sendPacket(type, data = {}) {
+        ws.send(JSON.stringify({...data, type: type}));
     }
-    
+
+
+    // on message
+    // set local state to server state
     ws.onmessage = function(evt) {
-        console.log(JSON.parse(evt.data))
         update(state => {return {...state, game: JSON.parse(evt.data)}});
     }
 
+
+    // on error
+    // set cantConnect to true, state to "name"
+    // returning to the name screen and 
     ws.onerror = function(evt) {
-        update(state=>{return {...state, cantConnect: true}});
+        update(state=>{return {...state, cantConnect: true, state: "name"}});
     }
 
+    // return custom store
+    // implementing the sending of event messages
     return {
 		subscribe,
+
         
-        click: (i, j) => {
-            ws.send(JSON.stringify({type:"click", row: i, column: j}));
+        click: (row, column) => {
+            sendPacket("click", {row, column});
         },
 
         setName: (name) => {
-            ws.send(JSON.stringify({type: "join", name: name}))
+            sendPacket("join", {name});
         },
 
         refreshGames: () => {
-            console.log("Refresh")
-            ws.send(JSON.stringify({type: "requestGamesList"}))
+            sendPacket("requestGamesList");
         },
 
         connectToGame: (game) => {
-            ws.send(JSON.stringify({type: "connect", game:game}))
+            sendPacket("connect", {game});
         },
 
         createNew: () => {
-            ws.send(JSON.stringify({type: "createNewGame"}))
+            sendPacket("createNewGame");
         },
 
         backToLobby: () => {
-            ws.send(JSON.stringify({type: "backToLobby"}))
+            sendPacket("backToLobby")
         }
 	};
 }
 
 
-export let state = createState()
+// server address
+const serverAddress = "ws://justthatguy.ddns.net:85";
+
+export let state = createState(serverAddress)
