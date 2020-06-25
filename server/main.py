@@ -3,22 +3,7 @@ import asyncio
 import json
 
 USERS = {}
-GAMES = set()
-
-def evaluate(board, symbol):
-    # rows
-    for i in range(3):
-        if all(x==symbol for x in board[i]):
-            return "won"
-    for i in range(3):
-        if all(x[i]==symbol for x in board):
-            return "won"
-    if all(board[i][i]==symbol for i in range(3)):
-        return "won"
-    if all(board[i][2-i]==symbol for i in range(3)):
-        return "won"
-    if all(all(x for x in b) for b in board):
-        return "draw"
+GAMES = []
 
 def getName(name):
     i = sum((1 if n.startswith(name) else 0 for n in USERS))
@@ -26,109 +11,136 @@ def getName(name):
         return name
     else:
         return "{}#{}".format(name, i)
-        
+
+class GameState:
+    def __init__(self, games):
+        self.name = ""
+        self.state = "name"
+        self.symbol = ""
+        self.games = games
+        self.reset()
     
+    def reset(self):
+        self.board = [["" for _ in range(3)] for _ in range(3)]
+        self.yourTurn = False
+        self.symbol = ""
+        self.result = ""
+        self.opponent = ""
+    def toJSON(self):
+        return json.dumps(self.__dict__)
 
-async def sendData(client):
-    client["game"]["games"] = list(GAMES)
-    await client["socket"].send(json.dumps(client["game"]))
+    def evaluate(self):
+        board = self.board
+        symbol = self.symbol
 
-async def sendAll():
-    for u in USERS:
-        await sendData(USERS[u])
+        # rows
+        for i in range(3):
+            if all(x==symbol for x in board[i]):
+                return "won"
 
-async def hello(ws, path):
-    
-    client = {
-        "socket": ws,
-        "game": {
-            "name": "",
-            "state": "name",
-            "board": [
-                ["", "", ""],
-                ["", "", ""],
-                ["", "", ""]
-            ],
-            "games": [],
-            "opponent": "",
-            "yourTurn": False,
-            "yourSymbol": "",
-            "result": "",
-        },
-    }
-    try:
-        while True:
-            
-            msg = json.loads(await ws.recv())            
-            game = client["game"]
-            state = game["state"]
+        # columns
+        for i in range(3):
+            if all(x[i]==symbol for x in board):
+                return "won"
+
+        # diagonal 1        
+        if all(board[i][i]==symbol for i in range(3)):
+            return "won"
+
+        # diagonal 2
+        if all(board[i][2-i]==symbol for i in range(3)):
+            return "won"
+
+        # check draw
+        if all(all(x for x in b) for b in board):
+            return "draw"
+
+class Client:
+    def __init__(self, socket, games):
+        self.socket = socket
+        self.state = GameState(games)
+    async def sendState(self):
+        await self.socket.send(self.state.toJSON())
+    async def loop(self):
+        async for rawMsg in self.socket:
+            msg = json.loads(rawMsg)
+
+            state = self.state.state
+            game = self.state
+            opponent = USERS[game.opponent] if game.opponent else None
 
             if state == "name":
                 assert(msg["type"]=="join")
-                game["name"] = getName(msg["name"])
-                USERS[game["name"]] = client
-                game["state"] = "lobby"
-                print("new player: {}".format(game['name']))
+
+                self.state.name = getName(msg["name"])
+                USERS[game.name] = self
+                game.state = "lobby"
+                print("new player: {}".format(game.name))
+
             elif state == "lobby":
                 if msg["type"] == "createNewGame":
-                    game["state"] = "waitingForGame"
-                    game["yourTurn"] = True
-                    game["yourSymbol"] = "X"
-                    GAMES.add(game["name"])
+                    game.state = "waitingForGame"
+                    game.yourTurn = True
+                    game.symbol = "X"
+                    GAMES.append(game.name)
                     await sendAll()
                 elif msg["type"] == "connect":
                     if msg["game"] in GAMES:
-                        game["opponent"] = msg["game"]
-                        game["state"] = "game"
-                        game["yourSymbol"] = "O"
-                        GAMES.remove(game["opponent"])
-                        game["board"] = USERS[game["opponent"]]["game"]["board"]
-                        USERS[game["opponent"]]["game"]["opponent"] = game["name"]
-                        USERS[game["opponent"]]["game"]["state"] = "game"
-                        await sendData(USERS[game["opponent"]])
+                        game.reset()
+                        game.opponent = msg["game"]
+                        opponent = USERS[game.opponent]
+                        game.state = "game"
+                        game.symbol = "O"
+                        GAMES.remove(game.opponent)
+                        game.board = opponent.state.board
+                        opponent.state.opponent = game.name
+                        opponent.state.state = "game"
+                        await opponent.sendState()
                         await sendAll()
             elif state == "game":
                 if msg["type"] == "click":
-                    if game["yourTurn"] and not game["result"]:
-                        if not game["board"][msg["row"]][msg["column"]]:
-                            game["board"][msg["row"]][msg["column"]] = game["yourSymbol"]
-                            game["yourTurn"] = False
-                            USERS[game["opponent"]]["game"]["yourTurn"] = True
-                            res = evaluate(game["board"], game["yourSymbol"])
+                    row, column = msg["row"], msg["column"]
+                    if game.yourTurn and not game.result:
+                        if not game.board[row][column]:
+                            game.board[row][column] = game.symbol
+                            game.yourTurn = False
+                            opponent.state.yourTurn = True
+                            res = self.state.evaluate()
                             if res=="won":
-                                game["result"] = "won"
-                                USERS[game["opponent"]]["game"]["result"] = "lost"
+                                game.result = "won"
+                                opponent.state.result = "lost"
                             if res=="draw":
-                                game["result"] = "draw"
-                                USERS[game["opponent"]]["game"]["result"] = "draw"
-                            await sendData(USERS[game["opponent"]])
+                                game.result = "draw"
+                                opponent.state.result = "draw"
+                            await opponent.sendState()
                 if msg["type"] == "backToLobby":
-                    game["result"] = ""
-                    game["board"] = [["" for _ in range(3)] for _ in range(3)]
-                    game["opponent"] = ""
-                    game["state"] = "lobby"
-                    game["yourTurn"] = False
-                    await sendAll()
-
+                    game.reset()
+                    game.state = "lobby"
             else:
                 print("Unknown packet!!")
-            await sendData(client)
-    except websockets.exceptions.ConnectionClosedOK:
-        game = client["game"]
-        name = game["name"]
-        if USERS[name]["game"]["opponent"]:
-            op = USERS[name]["game"]["opponent"]
-            USERS[op]["game"]["state"] = "lobby"
-            USERS[op]["game"]["yourTurn"] = False
-            USERS[op]["game"]["opponent"] = ""
-            USERS[op]["game"]["result"] = ""
-            USERS[op]["game"]["board"] = [["" for _ in range(3)] for _ in range(3)]
-        del USERS[name]
-        print("Lost connection with '{}'".format(name))
-        if name in GAMES:
-            GAMES.remove(name)
+                print(msg)
+            await self.sendState()
+
+    async def cleanup(self):
+        if self.state.opponent:
+            opponent = USERS[self.state.opponent]
+            opponent.state.reset()
+            opponent.state.state = "lobby"
+        if self.state.name in GAMES:
+            GAMES.remove(self.state.name)
+        USERS.pop(self.state.name)
+        print("Lost connection with '{}'".format(self.state.name))
         await sendAll()
 
-start_server = websockets.serve(hello, "0.0.0.0", 9000)
+async def sendAll():
+    for _, u in USERS.items():
+        await u.sendState()
+
+async def client(ws, path):
+    client = Client(ws, GAMES)
+    await client.loop()
+    await client.cleanup()
+
+start_server = websockets.serve(client, "0.0.0.0", 9000)
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
