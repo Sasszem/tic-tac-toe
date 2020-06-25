@@ -57,10 +57,6 @@ function createState(address) {
             sendPacket("join", {name});
         },
 
-        refreshGames: () => {
-            sendPacket("requestGamesList");
-        },
-
         connectToGame: (game) => {
             sendPacket("connect", {game});
         },
