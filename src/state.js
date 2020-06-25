@@ -73,6 +73,6 @@ function createState(address) {
 
 
 // server address
-const serverAddress = "ws://justthatguy.ddns.net:85";
+const serverAddress = "__gameServerAddress__";
 
 export let state = createState(serverAddress)
