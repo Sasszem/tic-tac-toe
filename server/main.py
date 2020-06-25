@@ -128,7 +128,8 @@ class Client:
             opponent.state.state = "lobby"
         if self.state.name in GAMES:
             GAMES.remove(self.state.name)
-        USERS.pop(self.state.name)
+        if self.state.state != "name":
+            USERS.pop(self.state.name)
         print("Lost connection with '{}'".format(self.state.name))
         await sendAll()
 
